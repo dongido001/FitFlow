@@ -1,6 +1,21 @@
-# FitFlow (WorkoutApp)
+# FitFlow
 
-> Mindful, adaptive 20-minute daily movement designed for lifelong joint health, stamina, and consistency. 100% offline and privacy-first.
+<p align="center">
+  <img src="./assets/playstore-feature-graphic.png" alt="FitFlow Feature Banner" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Mindful, adaptive 20-minute daily movement designed for lifelong joint health, stamina, and consistency.</strong><br>
+  <em>100% offline-first · Zero telemetry · Community tutorials on YouTube (@FitFlowWorld)</em>
+</p>
+
+---
+
+## App Screenshots
+
+| 1. Today's Routine | 2. Movement HUD | 3. Movement Journal | 4. Settings & Adaptations |
+| :---: | :---: | :---: | :---: |
+| <img src="./docs/screenshots/01-today-home.jpg" width="200" alt="Today's Home Screen" /> | <img src="./docs/screenshots/02-workout-hud.jpg" width="200" alt="Workout HUD Player" /> | <img src="./docs/screenshots/03-movement-journal.jpg" width="200" alt="Movement Journal" /> | <img src="./docs/screenshots/04-settings-pace.jpg" width="200" alt="Settings & Pace" /> |
 
 ---
 
@@ -34,6 +49,9 @@ FitFlow is a React Native mobile application built on **Expo SDK 57** that guide
   * 4-week progression stats showing total active minutes, completion rate, and interval work-to-rest ratios.
 * **Configurable Local Reminders:**
   * Daily workout notifications scheduled with customizable time presets (7:30 AM, 12:30 PM, 6:00 PM, 8:30 PM) via local Android/iOS alarms.
+* **Direct YouTube Video Form Guides:**
+  * Every movement links directly to high-definition video tutorials and form breakdowns on [@FitFlowWorld](https://www.youtube.com/@FitFlowWorld).
+  * Post-workout community prompt invites users to subscribe, comment, and suggest new workout flows.
 * **100% Offline & Private:**
   * Zero user accounts, zero cloud servers, zero advertisements, and zero third-party telemetry.
   * Data portability: Full JSON journal backup/export and one-tap local data erasure.
