@@ -5,10 +5,15 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/dongido001/FitFlow/releases/latest/download/FitFlow-v1.0.0.apk">
+    <img src="https://img.shields.io/badge/Download-Android%20APK%20(v1.0.0)-1B64AC?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
   <a href="https://www.youtube.com/@FitFlowWorld?sub_confirmation=1">
     <img src="https://img.shields.io/badge/YouTube-Subscribe%20%40FitFlowWorld-red?style=for-the-badge&logo=youtube" alt="Subscribe to @FitFlowWorld on YouTube" />
   </a>
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-1B64AC?style=for-the-badge&logo=expo" alt="Platform Expo" />
+  <a href="https://github.com/dongido001/FitFlow/releases/latest">
+    <img src="https://img.shields.io/github/v/release/dongido001/FitFlow?style=for-the-badge&label=Release" alt="Latest Release" />
+  </a>
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-166E48?style=for-the-badge" alt="100% Offline" />
 </p>
 
