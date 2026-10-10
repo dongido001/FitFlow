@@ -302,7 +302,7 @@ export default function HomeScreen({
       {/* Weekly Consistency Card */}
       <View style={S.card}>
         <View style={S.row}>
-          <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
             <Text style={S.heading}>Weekly rhythm</Text>
             <Text style={S.small}>
               {stats.streak > 0
@@ -320,7 +320,7 @@ export default function HomeScreen({
       {/* Structured Routine Breakdown */}
       <View style={S.card}>
         <View style={S.row}>
-          <View style={{ gap: 2 }}>
+          <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
             <Text style={S.heading}>Today’s structure</Text>
             <Text style={S.small}>
               {plan.steps.length} guided intervals across 5 phases
@@ -363,7 +363,7 @@ export default function HomeScreen({
                     color={C.sky}
                   />
                 </View>
-                <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
                   <Text
                     style={{ color: C.ink, fontSize: 15, fontWeight: "700" }}
                   >

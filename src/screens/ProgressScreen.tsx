@@ -95,7 +95,7 @@ export default function ProgressScreen() {
       {/* 7-Day Consistency Calendar */}
       <View style={S.card}>
         <View style={S.row}>
-          <View style={{ gap: 2 }}>
+          <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
             <Text style={S.heading}>Last 7 days</Text>
             <Text style={S.small}>Completed 20-minute sessions</Text>
           </View>
@@ -109,15 +109,14 @@ export default function ProgressScreen() {
       {/* 4-Week Progressive Pacing Card */}
       <View style={S.card}>
         <View style={S.row}>
-          <View style={{ gap: 2 }}>
-            <Text style={S.heading}>Four-week progression</Text>
-            <Text style={S.small}>
-              Strength {plan.strengthWork}s / {30 - plan.strengthWork}s rest · Cardio{" "}
-              {plan.cardioWork}s / {60 - plan.cardioWork}s rest
-            </Text>
-          </View>
+          <Text style={S.heading}>Four-week progression</Text>
           <Pill>{`WEEK ${week} OF 4`}</Pill>
         </View>
+
+        <Text style={S.small}>
+          Strength {plan.strengthWork}s / {30 - plan.strengthWork}s rest · Cardio{" "}
+          {plan.cardioWork}s / {60 - plan.cardioWork}s rest
+        </Text>
 
         <View style={{ flexDirection: "row", gap: 8, paddingVertical: 2 }}>
           {[1, 2, 3, 4].map((w) => {

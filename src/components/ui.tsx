@@ -151,6 +151,7 @@ export const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.iceBorder,
     alignSelf: "flex-start",
+    flexShrink: 0,
   },
   pillText: {
     fontSize: 11,
