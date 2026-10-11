@@ -8,7 +8,7 @@
   <a href="https://github.com/dongido001/FitFlow/releases/latest/download/FitFlow-v1.0.0.apk">
     <img src="https://img.shields.io/badge/Download-Android%20APK%20(v1.0.0)-1B64AC?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
   </a>
-  <a href="https://www.youtube.com/@FitFlowWorld?sub_confirmation=1">
+  <a href="https://www.youtube.com/channel/UCJzwgR-xSURwEROAjXGQV1g?sub_confirmation=1">
     <img src="https://img.shields.io/badge/YouTube-Subscribe%20%40FitFlowWorld-red?style=for-the-badge&logo=youtube" alt="Subscribe to @FitFlowWorld on YouTube" />
   </a>
   <a href="https://github.com/dongido001/FitFlow/releases/latest">
@@ -31,7 +31,7 @@
 
 The single biggest way you can support this project and keep it free is by supporting our official YouTube channel:
 
-### 🔴 [👉 Subscribe to @FitFlowWorld on YouTube](https://www.youtube.com/@FitFlowWorld?sub_confirmation=1)
+### 🔴 [👉 Subscribe to @FitFlowWorld on YouTube]([https://www.youtube.com/@FitFlowWorld?sub_confirmation=1](https://www.youtube.com/channel/UCJzwgR-xSURwEROAjXGQV1g?sub_confirmation=1))
 
 * **🔔 Drop a Subscribe & Follow:** Help grow the community and unlock more guided movement content.
 * **👍 Like the Tutorial Videos:** Every exercise in the app links directly to full form demonstrations on YouTube—drop a like whenever a video helps your movement!
@@ -72,7 +72,7 @@ FitFlow is a React Native mobile application built on **Expo SDK 57** that guide
   * Ambient instrumental background music that automatically ducks when countdown beeps trigger.
   * Large, accessible HUD buttons (44pt+ touch targets) for effortless pause, skip, and volume control mid-movement.
 * **Direct YouTube Video Form Guides:**
-  * Every movement links directly to high-definition video tutorials and form breakdowns on [@FitFlowWorld](https://www.youtube.com/@FitFlowWorld).
+  * Every movement links directly to high-definition video tutorials and form breakdowns on [@FitFlowWorld]([https://www.youtube.com/@FitFlowWorld](https://www.youtube.com/channel/UCJzwgR-xSURwEROAjXGQV1g?sub_confirmation=1)).
   * Post-workout community prompt invites users to subscribe, comment, and suggest new workout flows.
 * **Habit & Progress Tracking:**
   * Local streak tracker calculated against distinct local calendar dates.
@@ -149,7 +149,7 @@ npx expo-doctor
 ## Community & Contributing
 
 Have feedback or ideas for new movement routines?
-* Subscribe and comment on [YouTube (@FitFlowWorld)](https://www.youtube.com/@FitFlowWorld).
+* Subscribe and comment on [YouTube (@FitFlowWorld)]([https://www.youtube.com/@FitFlowWorld](https://www.youtube.com/channel/UCJzwgR-xSURwEROAjXGQV1g?sub_confirmation=1)).
 * Open an issue or discussion on this repository.
 
 ---
