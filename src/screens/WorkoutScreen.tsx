@@ -6,9 +6,11 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ScreenOrientation from "expo-screen-orientation";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -98,6 +100,56 @@ export default function WorkoutScreen({
     [hapticsEnabled],
   );
 
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [isManualLandscape, setIsManualLandscape] = useState(false);
+  const isLandscape = isManualLandscape || width > height;
+
+  const enterLandscape = useCallback(async () => {
+    setIsManualLandscape(true);
+    triggerHaptic("medium");
+    try {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE,
+      );
+    } catch {}
+  }, [triggerHaptic]);
+
+  const exitLandscape = useCallback(async () => {
+    setIsManualLandscape(false);
+    triggerHaptic("medium");
+    try {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      );
+    } catch {}
+  }, [triggerHaptic]);
+
+  // Clean up orientation lock when leaving Workout screen
+  useEffect(() => {
+    return () => {
+      void ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      ).catch(() => {});
+    };
+  }, []);
+
+  // Sync orientation changes (e.g. physical device rotation)
+  useEffect(() => {
+    const sub = ScreenOrientation.addOrientationChangeListener((evt) => {
+      const o = evt.orientationInfo.orientation;
+      const isNowLandscape =
+        o === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+        o === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
+      if (!isNowLandscape && isManualLandscape) {
+        setIsManualLandscape(false);
+      }
+    });
+    return () => {
+      sub.remove();
+    };
+  }, [isManualLandscape]);
+
   const update = useCallback((value: TimerState) => {
     current.current = value;
     setTimer(value);
@@ -114,7 +166,14 @@ export default function WorkoutScreen({
     lastTick.current = now;
   }, [plan.steps, update]);
 
-  useFocusEffect(useCallback(() => () => pause(), [pause]));
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        pause();
+        void exitLandscape();
+      };
+    }, [pause, exitLandscape]),
+  );
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
@@ -219,6 +278,7 @@ export default function WorkoutScreen({
   }, [seconds, timer.running, sound, triggerHaptic, player]);
 
   function reset() {
+    void exitLandscape();
     pause();
     player.pause();
     musicPlayer.pause();
@@ -281,7 +341,10 @@ export default function WorkoutScreen({
     void updateProfile({ soundBeeps: nextVal }).catch(() => undefined);
   }
 
-  if (timer.finished)
+  if (timer.finished) {
+    if (isLandscape) {
+      void exitLandscape();
+    }
     return (
       <CompleteWorkoutScreen
         key={sessionId}
@@ -303,6 +366,7 @@ export default function WorkoutScreen({
         }}
       />
     );
+  }
 
   const step = plan.steps[timer.index];
   const next = plan.steps[timer.index + 1];
@@ -329,12 +393,524 @@ export default function WorkoutScreen({
 
   return (
     <SafeAreaView
-      edges={["top", "left", "right"]}
-      style={{ flex: 1, backgroundColor: C.bg }}
+      edges={
+        isLandscape
+          ? ["top", "left", "right", "bottom"]
+          : ["top", "left", "right"]
+      }
+      style={{ flex: 1, backgroundColor: isLandscape ? "#0A1B2E" : C.bg }}
     >
       <WakeLock />
 
-      <ScrollView
+      {isLandscape ? (
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            paddingTop: Math.max(insets.top, 8),
+            paddingBottom: Math.max(insets.bottom, 8),
+            paddingLeft: Math.max(insets.left, 16),
+            paddingRight: Math.max(insets.right, 16),
+            gap: 16,
+          }}
+        >
+          {/* Left Column: Widescreen Visual / Video Stage */}
+          <View
+            style={{
+              flex: 1.25,
+              height: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {video ? (
+              <ExerciseVideo
+                key={`${step.id}-${shown.label}-landscape`}
+                source={video}
+                playing={timer.running}
+                aspectRatio={null}
+                style={{ width: "100%", height: "100%", borderRadius: 16 }}
+                borderRadius={16}
+                muted={!sound || ambientMusic}
+                badge={videoBadge}
+              />
+            ) : (
+              <View
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  backgroundColor: step.recovery
+                    ? "rgba(22, 110, 72, 0.25)"
+                    : "rgba(255, 255, 255, 0.06)",
+                  borderWidth: 1,
+                  borderColor: step.recovery
+                    ? "rgba(74, 222, 128, 0.35)"
+                    : "rgba(255, 255, 255, 0.12)",
+                  padding: 24,
+                }}
+              >
+                <Ionicons
+                  name={step.recovery ? "leaf-outline" : "body-outline"}
+                  size={36}
+                  color={step.recovery ? "#4ADE80" : "#38BDF8"}
+                />
+                <Text
+                  style={{
+                    color: step.recovery ? "#4ADE80" : "#FFFFFF",
+                    fontSize: 18,
+                    fontWeight: "700",
+                    textAlign: "center",
+                  }}
+                >
+                  {step.recovery ? "Breathe deeply & reset" : shown.label}
+                </Text>
+                <Text
+                  numberOfLines={3}
+                  style={{
+                    color: "rgba(255, 255, 255, 0.75)",
+                    fontSize: 13,
+                    lineHeight: 18,
+                    textAlign: "center",
+                    maxWidth: 320,
+                  }}
+                >
+                  {shown.detail}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Right Column: High-Visibility Essential Dashboard */}
+          <View
+            style={{
+              flex: 1,
+              height: "100%",
+              justifyContent: "space-between",
+              paddingVertical: 4,
+            }}
+          >
+            {/* 1. Header: Phase pill, step count, and PROMINENT EXIT BUTTON */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  flexShrink: 1,
+                }}
+              >
+                <Pill tone={step.recovery ? "recovery" : "default"}>
+                  {step.recovery
+                    ? "RECOVERY"
+                    : step.category.toUpperCase()}
+                </Pill>
+                <Text
+                  style={{
+                    color: "rgba(255, 255, 255, 0.65)",
+                    fontSize: 12,
+                    fontWeight: "600",
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {timer.index + 1}/{plan.steps.length}
+                </Text>
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Exit landscape mode"
+                onPress={() => {
+                  void exitLandscape();
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                  borderRadius: 10,
+                  backgroundColor: "rgba(255, 255, 255, 0.16)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.3)",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={15}
+                  color="#FFFFFF"
+                />
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
+                  Exit
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* 2. Movement Title & Gentler Alternative Switch */}
+            <View style={{ gap: 4 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 22,
+                    lineHeight: 26,
+                    fontWeight: "800",
+                    color: "#FFFFFF",
+                    letterSpacing: -0.4,
+                    flex: 1,
+                  }}
+                >
+                  {shown.label}
+                </Text>
+
+                {step.alternative && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      alternative
+                        ? `Switch back to ${step.label}`
+                        : `Switch to gentler option: ${step.alternative.label}`
+                    }
+                    onPress={() => {
+                      triggerHaptic("light");
+                      setAlternative(!alternative);
+                    }}
+                    style={({ pressed }) => ({
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      backgroundColor: alternative
+                        ? "rgba(56, 189, 248, 0.25)"
+                        : "rgba(255, 255, 255, 0.12)",
+                      borderWidth: 1,
+                      borderColor: alternative
+                        ? "#38BDF8"
+                        : "rgba(255, 255, 255, 0.2)",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      opacity: pressed ? 0.75 : 1,
+                    })}
+                  >
+                    <Ionicons
+                      name="swap-horizontal"
+                      size={13}
+                      color="#7DD3FC"
+                    />
+                    <Text
+                      style={{
+                        color: "#7DD3FC",
+                        fontSize: 11,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {alternative ? "Standard" : "Gentler"}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+
+              <Text
+                numberOfLines={2}
+                style={{
+                  color: "rgba(255, 255, 255, 0.72)",
+                  fontSize: 12,
+                  lineHeight: 16,
+                  fontWeight: "500",
+                }}
+              >
+                {shown.detail}
+              </Text>
+            </View>
+
+            {/* 3. High-Contrast Countdown Console & Up Next Preview */}
+            <View
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                borderRadius: 14,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.12)",
+                gap: 6,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "baseline",
+                    gap: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 44,
+                      lineHeight: 46,
+                      fontWeight: "700",
+                      fontVariant: ["tabular-nums"],
+                      color: step.recovery ? "#4ADE80" : "#FFFFFF",
+                      letterSpacing: -1.2,
+                    }}
+                  >
+                    {formatTime(seconds)}
+                  </Text>
+                  <Text
+                    style={{
+                      color: "rgba(255, 255, 255, 0.55)",
+                      fontSize: 13,
+                      fontWeight: "700",
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    / {step.duration}s
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    color: "rgba(255, 255, 255, 0.55)",
+                    fontSize: 11,
+                    fontWeight: "600",
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {formatTime(remainingSeconds(timer, plan.steps))} left
+                </Text>
+              </View>
+
+              {/* Interval Progress Bar */}
+              <View
+                style={{
+                  width: "100%",
+                  height: 5,
+                  borderRadius: 99,
+                  backgroundColor: "rgba(255, 255, 255, 0.14)",
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    height: 5,
+                    borderRadius: 99,
+                    backgroundColor: step.recovery ? "#4ADE80" : "#38BDF8",
+                    width: `${intervalProgress}%`,
+                  }}
+                />
+              </View>
+
+              {/* Up Next Bar */}
+              {next ? (
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: "rgba(255, 255, 255, 0.72)",
+                    fontSize: 11,
+                    fontWeight: "600",
+                  }}
+                >
+                  Up next:{" "}
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
+                    {next.label}
+                  </Text>{" "}
+                  ({next.duration}s)
+                </Text>
+              ) : (
+                <Text
+                  style={{
+                    color: "#4ADE80",
+                    fontSize: 11,
+                    fontWeight: "700",
+                  }}
+                >
+                  Final movement interval
+                </Text>
+              )}
+            </View>
+
+            {/* 4. Essential Transport Row (Only important icons and buttons) */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Restart current interval"
+                onPress={restartCurrentStep}
+                style={({ pressed }) => ({
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(255, 255, 255, 0.12)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.2)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons name="refresh" size={19} color="#FFFFFF" />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  timer.running
+                    ? "Pause workout"
+                    : timer.activeMs > 0
+                      ? "Resume workout"
+                      : "Start workout"
+                }
+                onPress={toggle}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: timer.running ? "#0284C7" : "#0EA5E9",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  opacity: pressed ? 0.88 : 1,
+                })}
+              >
+                <Ionicons
+                  name={timer.running ? "pause" : "play"}
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontWeight: "700",
+                    fontSize: 15,
+                  }}
+                >
+                  {timer.running
+                    ? "Pause"
+                    : timer.activeMs > 0
+                      ? "Resume"
+                      : "Start"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Skip interval"
+                onPress={skipCurrent}
+                style={({ pressed }) => ({
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(255, 255, 255, 0.12)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.2)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons
+                  name="play-skip-forward"
+                  size={19}
+                  color="#FFFFFF"
+                />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  sound ? "Mute countdown sound" : "Unmute countdown sound"
+                }
+                onPress={toggleSoundBeeps}
+                style={({ pressed }) => ({
+                  width: 44,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: sound
+                    ? "rgba(56, 189, 248, 0.22)"
+                    : "rgba(255, 255, 255, 0.12)",
+                  borderWidth: 1,
+                  borderColor: sound
+                    ? "#38BDF8"
+                    : "rgba(255, 255, 255, 0.2)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons
+                  name={sound ? "volume-high" : "volume-mute-outline"}
+                  size={18}
+                  color={sound ? "#38BDF8" : "rgba(255, 255, 255, 0.5)"}
+                />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Watch movement on YouTube"
+                onPress={() => {
+                  pause();
+                  void openYouTubeLink(
+                    getYouTubeUrlForExercise(shown.label),
+                  );
+                }}
+                style={({ pressed }) => ({
+                  width: 44,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(224, 36, 36, 0.2)",
+                  borderWidth: 1,
+                  borderColor: "rgba(224, 36, 36, 0.4)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons
+                  name="logo-youtube"
+                  size={18}
+                  color="#FF6B6B"
+                />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "space-between",
@@ -436,6 +1012,32 @@ export default function WorkoutScreen({
                   name={sound ? "volume-high" : "volume-mute-outline"}
                   size={18}
                   color={sound ? C.sky : C.muted}
+                />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Switch to widescreen landscape mode"
+                hitSlop={4}
+                onPress={() => {
+                  void enterLandscape();
+                }}
+                style={({ pressed }) => ({
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: C.card,
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Ionicons
+                  name="phone-landscape-outline"
+                  size={18}
+                  color={C.inkSecondary}
                 />
               </Pressable>
 
@@ -667,15 +1269,48 @@ export default function WorkoutScreen({
 
         {/* 3. VIDEO STAGE (Plays active move, alternative move, or recovery next-up preview) */}
         {video ? (
-          <ExerciseVideo
-            key={`${step.id}-${shown.label}`}
-            source={video}
-            playing={timer.running}
-            aspectRatio={1.62}
-            borderRadius={14}
-            muted={!sound || ambientMusic}
-            badge={videoBadge}
-          />
+          <View style={{ position: "relative" }}>
+            <ExerciseVideo
+              key={`${step.id}-${shown.label}`}
+              source={video}
+              playing={timer.running}
+              aspectRatio={1.62}
+              borderRadius={14}
+              muted={!sound || ambientMusic}
+              badge={videoBadge}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to widescreen landscape mode"
+              onPress={() => {
+                void enterLandscape();
+              }}
+              style={({ pressed }) => ({
+                position: "absolute",
+                bottom: 10,
+                right: 10,
+                backgroundColor: "rgba(14, 38, 64, 0.78)",
+                paddingHorizontal: 8,
+                paddingVertical: 5,
+                borderRadius: 8,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Ionicons
+                name="phone-landscape-outline"
+                size={13}
+                color="#FFFFFF"
+              />
+              <Text
+                style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}
+              >
+                Landscape
+              </Text>
+            </Pressable>
+          </View>
         ) : (
           <View
             style={{
@@ -689,8 +1324,40 @@ export default function WorkoutScreen({
               borderWidth: 1,
               borderColor: step.recovery ? C.recoveryBorder : C.line,
               padding: 20,
+              position: "relative",
             }}
           >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to widescreen landscape mode"
+              onPress={() => {
+                void enterLandscape();
+              }}
+              style={({ pressed }) => ({
+                position: "absolute",
+                bottom: 10,
+                right: 10,
+                backgroundColor: "rgba(14, 38, 64, 0.78)",
+                paddingHorizontal: 8,
+                paddingVertical: 5,
+                borderRadius: 8,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Ionicons
+                name="phone-landscape-outline"
+                size={13}
+                color="#FFFFFF"
+              />
+              <Text
+                style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}
+              >
+                Landscape
+              </Text>
+            </Pressable>
             <Ionicons
               name={step.recovery ? "leaf-outline" : "body-outline"}
               size={30}
@@ -989,6 +1656,7 @@ export default function WorkoutScreen({
           </Text>
         ) : null}
       </ScrollView>
+      )}
 
       {/* FORM & VARIATION GUIDE MODAL */}
       <Modal
@@ -1182,6 +1850,7 @@ export default function WorkoutScreen({
                 }
                 onPress={() => {
                   setConfirm(false);
+                  void exitLandscape();
                   update({
                     ...current.current,
                     finished: true,

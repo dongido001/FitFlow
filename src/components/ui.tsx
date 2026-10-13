@@ -464,13 +464,15 @@ export function ExerciseVideo({
   borderRadius = 14,
   muted = false,
   badge,
+  style,
 }: {
   source: number;
   playing: boolean;
-  aspectRatio?: number;
+  aspectRatio?: number | null;
   borderRadius?: number;
   muted?: boolean;
   badge?: string;
+  style?: ViewStyle;
 }) {
   const player = useVideoPlayer(source, (instance) => {
     instance.loop = true;
@@ -485,16 +487,19 @@ export function ExerciseVideo({
   }, [player, playing]);
   return (
     <View
-      style={{
-        borderRadius,
-        overflow: "hidden",
-        backgroundColor: C.studioWall,
-        borderWidth: 1,
-        borderColor: C.lineStrong,
-        width: "100%",
-        aspectRatio,
-        position: "relative",
-      }}
+      style={[
+        {
+          borderRadius,
+          overflow: "hidden",
+          backgroundColor: C.studioWall,
+          borderWidth: 1,
+          borderColor: C.lineStrong,
+          width: "100%",
+          ...(aspectRatio ? { aspectRatio } : {}),
+          position: "relative",
+        },
+        style,
+      ]}
     >
       <VideoView
         player={player}
